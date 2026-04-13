@@ -208,6 +208,7 @@
                 this.history = [];
                 this.display = document.getElementById('display');
                 this.historyList = document.getElementById('historyList');
+                this.isResultDisplayed = false;  // 결과가 표시된 상태인지
 
                 this.init();
             }
@@ -224,6 +225,7 @@
                 this.display.addEventListener('input', () => {
                     // 쉼표 제거하고 expression에 저장
                     this.expression = this.removeCommas(this.display.value);
+                    this.isResultDisplayed = false;
                 });
 
                 // 입력창에서 Enter 키 처리
@@ -304,8 +306,10 @@
             onButtonClick(value) {
                 if (value === 'C') {
                     this.expression = '';
+                    this.isResultDisplayed = false;
                     this.updateDisplay();
                 } else if (value === 'backspace') {
+                    this.isResultDisplayed = false;
                     this.handleBackspace();
                 } else if (value === '=') {
                     this.calculate();
@@ -339,6 +343,27 @@
             }
 
             handleInsert(char) {
+                const isOperator = ['+', '-', '*', '/'].includes(char);
+                const isNumber = /[0-9.]/.test(char);
+
+                // 결과가 표시된 상태에서 입력하는 경우
+                if (this.isResultDisplayed) {
+                    if (isNumber) {
+                        // 숫자 입력 시 결과를 지우고 새로 시작
+                        this.expression = char === '.' ? '0.' : char;
+                        this.isResultDisplayed = false;
+                        this.updateDisplay();
+                        const len = this.display.value.length;
+                        this.display.setSelectionRange(len, len);
+                        this.display.focus();
+                        return;
+                    } else if (isOperator) {
+                        // 연산자 입력 시 결과값에 이어서 계산
+                        this.isResultDisplayed = false;
+                        // 결과값 뒤에 연산자 추가
+                    }
+                }
+
                 const currentValue = this.display.value;
                 const cursorPos = this.display.selectionStart;
 
@@ -390,7 +415,8 @@
                     const historyEntry = `${formattedExpr} = ${formattedResult}`;
 
                     this.addToHistory(historyEntry);
-                    this.expression = '';
+                    this.expression = resultStr;
+                    this.isResultDisplayed = true;
                     this.updateDisplay();
                 } catch {
                     alert('잘못된 수식입니다.');
@@ -430,6 +456,7 @@
                 const entry = this.history[index];
                 const exprPart = entry.split(' = ')[0];
                 this.expression = this.removeCommas(exprPart);
+                this.isResultDisplayed = false;
                 this.updateDisplay();
                 // 입력창에 포커스를 주어 바로 수정 가능하게
                 this.display.focus();
