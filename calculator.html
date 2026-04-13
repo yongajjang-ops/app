@@ -116,6 +116,15 @@
             background: #e04545;
         }
 
+        .btn.backspace {
+            background: #ff8a80;
+            color: #fff;
+        }
+
+        .btn.backspace:active {
+            background: #e57373;
+        }
+
         .btn.equals {
             background: #4caf50;
             color: #fff;
@@ -176,8 +185,11 @@
 
             <button class="btn clear" data-value="C">C</button>
             <button class="btn number" data-value="0">0</button>
-            <button class="btn equals" data-value="=">=</button>
+            <button class="btn backspace" data-value="backspace">&#9003;</button>
             <button class="btn operator" data-value="+">+</button>
+
+            <button class="btn number" data-value=".">.</button>
+            <button class="btn equals" data-value="=" style="grid-column: span 3">=</button>
         </div>
     </div>
 
@@ -204,15 +216,14 @@
                 document.addEventListener('keydown', (e) => {
                     if (e.key >= '0' && e.key <= '9') {
                         this.onButtonClick(e.key);
-                    } else if (['+', '-', '*', '/'].includes(e.key)) {
+                    } else if (['+', '-', '*', '/', '.'].includes(e.key)) {
                         this.onButtonClick(e.key);
                     } else if (e.key === 'Enter' || e.key === '=') {
                         this.onButtonClick('=');
                     } else if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') {
                         this.onButtonClick('C');
                     } else if (e.key === 'Backspace') {
-                        this.expression = this.expression.slice(0, -1);
-                        this.updateDisplay();
+                        this.onButtonClick('backspace');
                     }
                 });
             }
@@ -240,6 +251,9 @@
             onButtonClick(value) {
                 if (value === 'C') {
                     this.expression = '';
+                    this.updateDisplay();
+                } else if (value === 'backspace') {
+                    this.expression = this.expression.slice(0, -1);
                     this.updateDisplay();
                 } else if (value === '=') {
                     this.calculate();
