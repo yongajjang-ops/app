@@ -275,19 +275,97 @@
                 return expr.replace(/,/g, '');
             }
 
+            // 포맷된 문자열에서의 커서 위치를 raw 위치로 변환
+            formattedToRawPosition(formattedStr, formattedPos) {
+                let rawPos = 0;
+                let formattedIndex = 0;
+                while (formattedIndex < formattedPos && formattedIndex < formattedStr.length) {
+                    if (formattedStr[formattedIndex] !== ',') {
+                        rawPos++;
+                    }
+                    formattedIndex++;
+                }
+                return rawPos;
+            }
+
+            // raw 위치를 포맷된 문자열에서의 커서 위치로 변환
+            rawToFormattedPosition(formattedStr, rawPos) {
+                let formattedIndex = 0;
+                let rawIndex = 0;
+                while (rawIndex < rawPos && formattedIndex < formattedStr.length) {
+                    if (formattedStr[formattedIndex] !== ',') {
+                        rawIndex++;
+                    }
+                    formattedIndex++;
+                }
+                return formattedIndex;
+            }
+
             onButtonClick(value) {
                 if (value === 'C') {
                     this.expression = '';
                     this.updateDisplay();
                 } else if (value === 'backspace') {
-                    this.expression = this.expression.slice(0, -1);
-                    this.updateDisplay();
+                    this.handleBackspace();
                 } else if (value === '=') {
                     this.calculate();
                 } else {
-                    this.expression += value;
-                    this.updateDisplay();
+                    this.handleInsert(value);
                 }
+            }
+
+            handleBackspace() {
+                const currentValue = this.display.value;
+                const cursorPos = this.display.selectionStart;
+
+                // 커서가 맨 앞이면 삭제할 것 없음
+                if (cursorPos === 0) return;
+
+                // 포맷된 위치를 raw 위치로 변환
+                const rawPos = this.formattedToRawPosition(currentValue, cursorPos);
+
+                // raw expression에서 커서 앞의 문자 삭제
+                this.expression = this.expression.slice(0, rawPos - 1) + this.expression.slice(rawPos);
+
+                // 디스플레이 업데이트
+                const newFormatted = this.expression === '' ? '0' : this.formatExpression(this.expression);
+                this.display.value = newFormatted;
+
+                // 새로운 커서 위치 계산 및 설정
+                const newRawPos = rawPos - 1;
+                const newFormattedPos = this.rawToFormattedPosition(newFormatted, newRawPos);
+                this.display.setSelectionRange(newFormattedPos, newFormattedPos);
+                this.display.focus();
+            }
+
+            handleInsert(char) {
+                const currentValue = this.display.value;
+                const cursorPos = this.display.selectionStart;
+
+                // 현재 값이 '0'이고 숫자를 입력하면 0을 대체
+                if (currentValue === '0' && /[0-9]/.test(char)) {
+                    this.expression = char;
+                    this.updateDisplay();
+                    this.display.setSelectionRange(1, 1);
+                    this.display.focus();
+                    return;
+                }
+
+                // 포맷된 위치를 raw 위치로 변환
+                const rawPos = this.formattedToRawPosition(currentValue, cursorPos);
+
+                // raw expression에서 커서 위치에 문자 삽입
+                this.expression = this.expression.slice(0, rawPos) + char + this.expression.slice(rawPos);
+
+                // 디스플레이 업데이트
+                const newFormatted = this.formatExpression(this.expression);
+                this.display.value = newFormatted;
+
+                // 새로운 커서 위치 계산 및 설정
+                const newRawPos = rawPos + 1;
+                const newFormattedPos = this.rawToFormattedPosition(newFormatted, newRawPos);
+                this.display.setSelectionRange(newFormattedPos, newFormattedPos);
+                this.display.focus();
             }
 
             calculate() {
