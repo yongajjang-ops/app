@@ -38,8 +38,16 @@
             font-size: 2.5rem;
             font-weight: bold;
             min-height: 80px;
-            word-break: break-all;
+            width: 100%;
+            border: none;
             border-bottom: 1px solid #e0e0e0;
+            outline: none;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .display:focus {
+            background: #fff;
+            box-shadow: inset 0 0 5px rgba(102, 126, 234, 0.3);
         }
 
         .history-section {
@@ -160,7 +168,7 @@
 </head>
 <body>
     <div class="calculator">
-        <div class="display" id="display">0</div>
+        <input type="text" class="display" id="display" value="0" inputmode="none">
 
         <div class="history-section">
             <div class="history-label">계산 내역 (터치하여 수정)</div>
@@ -212,8 +220,27 @@
                     });
                 });
 
-                // 키보드 이벤트
+                // 입력창 직접 수정 이벤트
+                this.display.addEventListener('input', () => {
+                    // 쉼표 제거하고 expression에 저장
+                    this.expression = this.removeCommas(this.display.value);
+                });
+
+                // 입력창에서 Enter 키 처리
+                this.display.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.calculate();
+                    }
+                });
+
+                // 키보드 이벤트 (입력창 외부)
                 document.addEventListener('keydown', (e) => {
+                    // 입력창에 포커스가 있으면 무시 (직접 입력 허용)
+                    if (document.activeElement === this.display) {
+                        return;
+                    }
+
                     if (e.key >= '0' && e.key <= '9') {
                         this.onButtonClick(e.key);
                     } else if (['+', '-', '*', '/', '.'].includes(e.key)) {
@@ -264,10 +291,12 @@
             }
 
             calculate() {
-                if (!this.expression) return;
+                // 입력창에서 직접 값을 가져옴 (사용자가 수정했을 수 있음)
+                const currentValue = this.display.value;
+                if (!currentValue || currentValue === '0') return;
 
                 try {
-                    const calcExpr = this.removeCommas(this.expression);
+                    const calcExpr = this.removeCommas(currentValue);
                     const result = eval(calcExpr);
 
                     if (result === Infinity || result === -Infinity) {
@@ -294,9 +323,9 @@
 
             updateDisplay() {
                 if (this.expression === '') {
-                    this.display.textContent = '0';
+                    this.display.value = '0';
                 } else {
-                    this.display.textContent = this.formatExpression(this.expression);
+                    this.display.value = this.formatExpression(this.expression);
                 }
             }
 
@@ -324,6 +353,10 @@
                 const exprPart = entry.split(' = ')[0];
                 this.expression = this.removeCommas(exprPart);
                 this.updateDisplay();
+                // 입력창에 포커스를 주어 바로 수정 가능하게
+                this.display.focus();
+                // 커서를 끝으로 이동
+                this.display.setSelectionRange(this.display.value.length, this.display.value.length);
             }
         }
 
